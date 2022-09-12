@@ -37,7 +37,6 @@ def main():
     # 3. Fetch all strategies from the vaults and identify the vaults that can't be paused via GAC
     vaults_non_gac = []
     strategies = []
-    # for i in range(len(vaults_v1)):
     for address in vaults_v1:
         vault = interface.ISettV4h(address)
         # Yearn vault doesn't contain controller/strategy
