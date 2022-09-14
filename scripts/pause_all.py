@@ -4,6 +4,8 @@ from helpers.addresses import r
 from rich.console import Console
 from tqdm import tqdm
 import click
+from brownie.network import gas_price
+from brownie.network.gas.strategies import ExponentialScalingStrategy
 
 C = Console()
 
@@ -17,12 +19,21 @@ def main():
     # Get caller account
     dev = connect_account()
 
-    # Prompt if we should pause all (Should we not always do pause all here? Individual pauses are likely more efficient through etherscan)
-    pause_all = click.prompt("Pause all?", type=click.Choice(["y", "n"]))
+    # Set exponential gas strategy parameters
+    custom_gas = click.prompt("Set custom gas strategy? (default: Exponential from 100 gwei to 200 gwei with 30s interval)", type=click.Choice(["y", "n"]))
+    if custom_gas == "y":
+        confirm = "n"
+        while confirm == "n":
+            initial = input("Initial gas price in gwei:")
+            max = input("Max gas price in gwei:")
+            interval = input("Interval in seconds:")
+            confirm = click.prompt(f"Exponential gas strategy from {initial} gwei to {max} with {interval}s, confirm?", type=click.Choice(["y", "n"]))
+        gas_price(ExponentialScalingStrategy(f"{initial} gwei", f"{max} gwei", interval))
+    else:
+        gas_price(ExponentialScalingStrategy("100 gwei", "200 gwei", 30))
 
-    # 1. If pause all, pause GAC (Doing it first as it will quickly pause most of the vaults), else, continue
-    if pause_all == "y":
-        GUARDIAN.pause(REGISTRY.get("globalAccessControl"), {"from": dev})
+    # 1. Pause GAC (Doing it first as it will quickly pause most of the vaults)
+    GUARDIAN.pause(REGISTRY.get("globalAccessControl"), {"from": dev})
 
     # 2. Fetch all vaults from the Registry (V1, V1.5) for all status (deprecated, exp, guarded, open)
     C.print("[cyan]Fetching vaults and strategies from Registry...[/cyan]")
