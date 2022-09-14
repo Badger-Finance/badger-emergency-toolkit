@@ -40,6 +40,8 @@ interface IStrategy {
 
     function tend() external;
 
+    function paused() external view returns(bool);
+
     function harvest() external;
 
     function governance() external view returns (address);
